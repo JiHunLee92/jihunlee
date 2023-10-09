@@ -1,0 +1,34 @@
+---
+- hosts: all
+
+  vars:
+    hostname: "{{ ansible_hostname }}"
+
+  environment: 
+    TERM: xterm-256color
+
+  tasks:
+
+  - name: Download Script File
+    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/aegisecu/2023/Server_Linux.sh" 
+     
+  - name: Set File Permission
+    shell: "sudo chmod 777 /tmp/Server_Linux.sh"
+
+  - name: Set Term Value
+    shell: "export TERM=xterm"    
+
+  - name: Check Sciprt Running
+    shell: "/tmp/Server_Linux.sh -E server -n || true"
+    ignore_errors: yes
+
+  - name: Find files to copy
+    find: paths="/home/ec2-user/" recurse=no patterns="*.uraw"
+    register: files_to_copy
+
+  - name: Copy files
+    fetch: 
+      src : "{{ item.path }}"
+      dest : "/log/"
+      flat: yes
+    with_items: "{{ files_to_copy.files }}"

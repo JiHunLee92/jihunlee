@@ -1,0 +1,31 @@
+---
+- hosts: all
+
+  vars:
+    hostname: "{{ ansible_hostname }}"
+    date: "{{ ansible_date_time['date'] }}"
+
+  tasks:
+  
+  - name: Download Script File
+    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/scripts/2023/ubuntu.sh" 
+    
+  - name: Grant user and file execution permission
+    shell: "chown -R devops.devops /tmp/ubuntu.sh"
+    shell: "chmod +x /tmp/ubuntu.sh"
+
+  - name: Check Scripts Test
+    shell: "ls /tmp/ubuntu.sh"
+    shell: "cat /tmp/ubuntu.sh"
+
+  - name: Check Sciprt Running
+    shell: "sudo /tmp/ubuntu.sh > /tmp/test-report-{{ ansible_hostname }}-{{ ansible_date_time['date'] }}"
+
+  - name: File Recive to Remote Server
+    fetch:
+      src: "/tmp/test-report-{{ ansible_hostname }}-{{ ansible_date_time['date'] }}"
+      dest: "/log/test-report-{{ ansible_hostname }}-{{ ansible_date_time['date'] }}"
+      flat: yes
+
+  - name: Delete Scripte File
+    shell: "rm -rf /tmp/ubuntu.sh"

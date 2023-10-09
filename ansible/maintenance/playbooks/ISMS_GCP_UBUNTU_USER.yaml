@@ -1,0 +1,33 @@
+---
+- hosts: all
+
+  vars:
+    hostname: "{{ ansible_hostname }}"
+
+  environment: 
+    TERM: xterm-256color
+
+  tasks:
+
+  - name: Download Script File
+    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/aegisecu/2023/Server_Linux.sh" 
+     
+  - name: Set File Owner Change
+    shell: "sudo chown -R ubuntu.ubuntu /tmp/Server_Linux.sh"
+ 
+  - name: Set File Permission
+    shell: "sudo chmod 777 /tmp/Server_Linux.sh"
+
+
+  - name: Set Term Value
+    shell: "export TERM=xterm"    
+
+  - name: Check Sciprt Running
+    shell: "/tmp/Server_Linux.sh -E server -n || true"
+    ignore_errors: yes
+
+  - name: File Recive to Remote Server
+    fetch:
+      src: "/home/ubuntu/SERVER_UNIX_{{ ansible_hostname }}.uraw"      
+      dest: "/log/SERVER_UNIX_{{ ansible_hostname }}.uraw"
+      flat: yes
