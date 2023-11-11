@@ -20,9 +20,7 @@ data "terraform_remote_state" "sg" {
   }
 }
 
-data "aws_ami" "ubuntu" {
-  filter {
-    name   = "name"
-    values = ["luke-dev-bastion-20231004"]
-  }
+data "aws_acm_certificate" "test-network" {
+  domain    = "*.test.network"
+  key_types = ["RSA_2048"]
 }

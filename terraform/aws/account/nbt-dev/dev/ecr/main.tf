@@ -2,23 +2,35 @@
 # ECR Repository
 ################################################################################
 
+module "admin_ecr" {
+  source = "../../../../module/ecr"
+
+  repository_name = "${var.name}-${var.environment}-ecr"
+  repository_lifecycle_policy = templatefile("./templates/ecr_lifecycle_keep_30_images.json", {
+
+  })
+
+  tags = {
+    Name = "${var.name}-${var.environment}-ecr"
+  }
+}
+
 # module "ecr" {
-#   source = "../.."
+#   source = "../../../../module/ecr"
 
 #   repository_name = "${var.name}-${var.environment}-ecr"
 #   repository_lifecycle_policy = jsonencode({
 #     rules = [
 #       {
+#         action = {
+#           type = "expire"
+#         },        
 #         rulePriority = 1,
 #         description  = "Keep last 30 images",
 #         selection = {
-#           tagStatus     = "tagged",
-#           tagPrefixList = ["v"],
 #           countType     = "imageCountMoreThan",
-#           countNumber   = 30
-#         },
-#         action = {
-#           type = "expire"
+#           countNumber   = 30,
+#           tagStatus = "untagged"
 #         }
 #       }
 #     ]
