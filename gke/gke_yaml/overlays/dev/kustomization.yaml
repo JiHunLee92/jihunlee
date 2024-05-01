@@ -1,0 +1,60 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+- partners-managed-cert.yaml
+- partners-ingress.yaml
+- admin-managed-cert.yaml
+- admin-ingress.yaml
+- web-managed-cert.yaml
+- web-ingress.yaml
+- admin-logic-managed-cert.yaml
+- app-logic-managed-cert.yaml
+- logic-managed-cert.yaml
+- admin-logic-ingress.yaml
+- app-logic-ingress.yaml
+- logic-ingress.yaml
+
+patchesStrategicMerge:
+- partners-deployment.yaml
+- partners-service.yaml
+- admin-deployment.yaml
+- admin-service.yaml
+- web-deployment.yaml
+- web-service.yaml
+- admin-logic-deployment.yaml
+- admin-logic-service.yaml
+- app-logic-deployment.yaml
+- app-logic-service.yaml
+- logic-deployment.yaml
+- logic-service.yaml
+- batch-deployment.yaml
+
+configMapGenerator:
+- envs:
+  - admin-logic-configmap.env
+  name: admin-logic-env
+- envs:
+  - app-logic-configmap.env
+  name: app-logic-env
+- envs:
+  - logic-configmap.env
+  name: logic-env
+- envs:
+  - batch-configmap.env
+  name: batch-env
+
+generatorOptions:
+  annotations:
+    note: generated
+  disableNameSuffixHash: true
+  labels:
+    type: generated
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: asia-northeast3-docker.pkg.dev/test-poc/test-base/test-admin
+  newName: asia-northeast3-docker.pkg.dev/test-poc/test-base/test-admin
+  newTag: 190ea2b
+

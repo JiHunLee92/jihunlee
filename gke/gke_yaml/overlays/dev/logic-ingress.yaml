@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1                                                        
+kind: Ingress                                                                           
+metadata:                                                                               
+  name: test-logic-ingress-1                                                               
+  namespace: dev                                                                       
+  annotations:                                                                          
+    kubernetes.io/ingress.global-static-ip-name: logic-lb-ip                   
+    networking.gke.io/managed-certificates: logic-managed-cert                                  
+    networking.gke.io/v1beta1.FrontendConfig: test-logic-frontend-1
+spec:                                                                       
+  defaultBackend:
+    service:
+      name: test-logic-service-1
+      port:
+        number: 80
+---
+apiVersion: networking.gke.io/v1beta1                                                   
+kind: FrontendConfig                                                                    
+metadata:                                                                               
+  name: test-logic-frontend-1                                                         
+  namespace: dev                                                                       
+spec:                                                                                   
+  redirectToHttps:                                                                      
+    enabled: true
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: test-logic-backend-1
+  namespace: dev
+spec:
+  healthCheck:
+    checkIntervalSec: 5
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 5
+    type: HTTP
+    requestPath: /api/health_check
+    port: 8080
+

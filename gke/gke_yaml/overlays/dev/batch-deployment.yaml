@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-batch-1
+  namespace: dev
+  labels:
+    app: test-batch-1
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-batch-1
+  template:
+    metadata:
+        labels:
+          app: test-batch-1
+    spec:
+      containers:
+      - name: test-batch-1
+        image: asia-northeast3-docker.pkg.dev/test-poc/test-base/test-admin
+        env:
+        - name: spring.datasource.url
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_DATASOURCE_URL
+        - name: spring.datasource.username
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_DATASOURCE_USERNAME
+        - name: spring.redis.host
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_REDIS_HOST
+        - name: spring.redis.port
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_REDIS_PORT
+        - name: spring.jpa.hibernate.ddl-auto
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        - name: app.scheduling.enable
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_SCHEDULING_ENABLED
+        - name: spring.profiles.active
+          valueFrom:
+            configMapKeyRef:
+              name: batch-env
+              key: SPRING_PROFILES_ACTIVE
+        - name: spring.datasource.password
+          valueFrom:
+            secretKeyRef:
+              name: test-dev-secret
+              key: SPRING_DATASOURCE_PASSWORD
+        envFrom: 
+        - configMapRef:
+            name: batch-env
+        - secretRef:
+            name: test-dev-secret
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi 
+

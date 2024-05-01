@@ -1,0 +1,8 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: logic-managed-cert
+  namespace: dev
+spec:
+  domains:
+    - logic.poc.test.com
