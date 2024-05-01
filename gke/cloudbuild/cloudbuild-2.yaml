@@ -1,0 +1,30 @@
+steps:
+  #secret manager에서 키파일 내려받기
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: [ '-c', "gcloud secrets versions access latest --secret=SECRET-NAME --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/SECRET.json" ]
+
+#컨테이너 빌드
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA', '.', '-f', 'Dockerfile-test.dev']
+
+# CD Trigger를 위한 kustomize repo checkout
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Checkout kustomize repository
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    gcloud source repos clone test-env-1 && \
+    cd test-env-1 && \
+    git checkout master && \
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)') && \
+    cd overlays/dev && \
+    kustomize edit set image ARTIFACT-REGISTRY/IMAGE-NAME=ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA && \
+    git add . && \
+    git commit -m "image tag 변경" && \
+    git push origin master
+
+#push
+images:
+- 'ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA'

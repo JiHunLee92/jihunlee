@@ -1,0 +1,33 @@
+steps:
+# 저장소 도커 이미지 빌드
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args: [ 'build', '-t', 'asia-northeast3-docker.pkg.dev/mystore-poc/test-base/mystore-admin:$SHORT_SHA', '.' ]
+
+# 빌드 완료된 도커 이미지 push
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args: [ 'push', 'asia-northeast3-docker.pkg.dev/mystore-poc/test-base/mystore-admin:$SHORT_SHA' ]
+
+# CD Trigger를 위한 kustomize repo checkout
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Checkout kustomize repository
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    gcloud source repos clone test-dev-env && \
+    cd test-dev-env && \
+    git checkout master && \
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)') && \
+    cd overlays/dev && \
+    kustomize edit set image asia-northeast3-docker.pkg.dev/mystore-poc/test-base/mystore-admin=asia-northeast3-docker.pkg.dev/mystore-poc/test-base/mystore-admin:$SHORT_SHA && \
+    git add . && \
+    git commit -m "image tag 변경" && \
+    git push origin master
+
+images:
+- 'asia-northeast3-docker.pkg.dev/mystore-poc/test-base/mystore-admin:$SHORT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

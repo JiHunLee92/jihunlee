@@ -1,0 +1,35 @@
+steps:
+# 저장소 도커 이미지 빌드
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args: [ 'build', '-t', 'ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA', '.' ]
+
+# 빌드 완료된 도커 이미지 push
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args: [ 'push', 'ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA' ]
+
+# CD Trigger를 위한 kustomize repo checkout
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Checkout kustomize repository
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    gcloud source repos clone test-dev-env && \
+    cd test-dev-env && \
+    git checkout master && \
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)') && \
+    cd overlays/dev && \
+    kustomize edit set image ARTIFACT-REGISTRY/IMAGE-NAME=ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA && \
+    git add . && \
+    git commit -m "image tag 변경" && \
+    git push origin master
+
+images:
+- 'ARTIFACT-REGISTRY/IMAGE-NAME:$SHORT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+
