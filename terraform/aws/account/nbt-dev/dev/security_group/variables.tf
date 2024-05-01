@@ -152,3 +152,41 @@ variable "db_sg_rule" {
     }
   }
 }
+
+variable "eks_cluster_sg_rule" {
+  default = {
+    ingres-1 = {
+      rule_type  = "ingress"
+      from_port  = 0
+      to_port    = 0
+      protocol   = "-1"
+      src_or_dst = "0.0.0.0/0"
+    },
+    egress-1 = {
+      rule_type  = "egress"
+      from_port  = 0
+      to_port    = 0
+      protocol   = "-1"
+      src_or_dst = "0.0.0.0/0"
+    }
+  }
+}
+
+variable "eks_node_group_sg_rule" {
+  default = {
+    ingres-1 = {
+      rule_type  = "ingress"
+      from_port  = 0
+      to_port    = 0
+      protocol   = "-1"
+      src_or_dst = "0.0.0.0/0"
+    },
+    egress-1 = {
+      rule_type  = "egress"
+      from_port  = 0
+      to_port    = 0
+      protocol   = "-1"
+      src_or_dst = "0.0.0.0/0"
+    }
+  }
+}

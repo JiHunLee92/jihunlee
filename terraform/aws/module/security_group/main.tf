@@ -1,5 +1,6 @@
 ##########################
 # Security group 
+# Link : https://github.com/terraform-aws-modules/terraform-aws-security-group
 ##########################
 
 resource "aws_security_group" "this" {
@@ -29,6 +30,6 @@ resource "aws_security_group_rule" "sg_rule" {
   to_port                  = each.value.to_port
   protocol                 = each.value.protocol
   cidr_blocks              = length(regexall("[a-z]", each.value.src_or_dst)) == 0 ? [each.value.src_or_dst] : null
-  source_security_group_id = length(regexall("[a-z]", each.value.src_or_dst)) != 0 && regexall("[a-z]", each.value.src_or_dst) != ["self"] ? each.value.src_or_dst : null
+  source_security_group_id = each.value.src_or_dst == "self" ? null : length(regexall("[a-z]", each.value.src_or_dst)) != 0 ? each.value.src_or_dst : null
   self                     = each.value.src_or_dst == "self" ? true : null
 }

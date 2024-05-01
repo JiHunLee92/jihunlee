@@ -21,3 +21,11 @@ output "redis_sg" {
 output "db_sg" {
   value = module.db_sg.security_group_id
 }
+
+output "eks_cluster_sg" {
+  value = module.eks_cluster_sg.security_group_id
+}
+
+output "eks_node_group_sg" {
+  value = module.eks_node_group_sg.security_group_id
+}
