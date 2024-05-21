@@ -34,7 +34,7 @@ resource "aws_elastic_beanstalk_environment" "this" {
         }
         IamInstanceProfile = {
           namespace = "aws:autoscaling:launchconfiguration"
-          value = var.iam_instance_profile
+          value     = var.iam_instance_profile
         }
       }
     )
@@ -46,4 +46,3 @@ resource "aws_elastic_beanstalk_environment" "this" {
     }
   }
 }
-

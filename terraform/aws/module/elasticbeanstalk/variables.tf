@@ -58,7 +58,7 @@ variable "eb_default_settings" {
   default = {
     EC2KeyName = {
       namespace = "aws:autoscaling:launchconfiguration"
-      value     = "test-dev-key"
+      value     = "adison-dev-key"
     }
     InstanceTypes = {
       namespace = "aws:ec2:instances"

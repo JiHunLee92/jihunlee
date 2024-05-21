@@ -66,7 +66,7 @@ variable "volume" {
 # Service
 ################################################################################
 
-variable "name" {
+variable "service_name" {
   description = "Name of the service (up to 255 letters, numbers, hyphens, and underscores)"
   type        = string
   default     = null
@@ -75,7 +75,6 @@ variable "name" {
 variable "cluster_arn" {
   description = "ARN of the ECS cluster where the resources will be provisioned"
   type        = string
-  default     = ""
 }
 
 variable "scheduling_strategy" {
@@ -151,8 +150,7 @@ variable "terraform" {
 }
 
 variable "environment" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "service_tags" {
@@ -164,5 +162,56 @@ variable "service_tags" {
 variable "timeouts" {
   description = "Create, update, and delete timeout configurations for the service"
   type        = map(string)
+  default     = {}
+}
+
+################################################################################
+# Autoscaling
+################################################################################
+
+variable "autoscaling_min_capacity" {
+  description = "Minimum number of tasks to run in your service"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  description = "Maximum number of tasks to run in your service"
+  type        = number
+  default     = 10
+}
+
+variable "cluster_name" {
+  type = string
+}
+
+variable "autoscaling_policies" {
+  description = "Map of autoscaling policies to create for the service"
+  type        = any
+  default = {
+    cpu = {
+      policy_type = "TargetTrackingScaling"
+
+      target_tracking_scaling_policy_configuration = {
+        predefined_metric_specification = {
+          predefined_metric_type = "ECSServiceAverageCPUUtilization"
+        }
+      }
+    }
+    memory = {
+      policy_type = "TargetTrackingScaling"
+
+      target_tracking_scaling_policy_configuration = {
+        predefined_metric_specification = {
+          predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+        }
+      }
+    }
+  }
+}
+
+variable "autoscaling_scheduled_actions" {
+  description = "Map of autoscaling scheduled actions to create for the service"
+  type        = any
   default     = {}
 }

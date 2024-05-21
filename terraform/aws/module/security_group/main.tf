@@ -1,10 +1,10 @@
-##########################
+################################################################################
 # Security group 
 # Link : https://github.com/terraform-aws-modules/terraform-aws-security-group
-##########################
+################################################################################
 
 resource "aws_security_group" "this" {
-  name   = var.name
+  name   = var.sg_name
   vpc_id = var.vpc_id
 
   tags = merge(
@@ -16,9 +16,9 @@ resource "aws_security_group" "this" {
   )
 }
 
-###################################
+################################################################################
 # Security Group Rule
-###################################
+################################################################################
 
 resource "aws_security_group_rule" "sg_rule" {
   for_each = var.sg_rule

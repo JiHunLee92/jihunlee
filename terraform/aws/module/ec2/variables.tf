@@ -5,13 +5,11 @@
 variable "ami" {
   description = "ID of AMI to use for the instance"
   type        = string
-  default     = ""
 }
 
 variable "instance_type" {
   description = "The type of instance to start"
   type        = string
-  default     = ""
 }
 
 variable "availability_zone" {
@@ -73,8 +71,7 @@ variable "terraform" {
 }
 
 variable "environment" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "enable_ec2_eip" {}

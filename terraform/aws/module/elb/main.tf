@@ -1,10 +1,11 @@
 ##################################################################
 # Elastic Load Balancer
+# Link : https://github.com/terraform-aws-modules/terraform-aws-elb
 ##################################################################
 
 resource "aws_lb" "this" {
 
-  name = var.name
+  name = var.lb_name
 
   load_balancer_type = var.load_balancer_type
   internal           = var.internal
@@ -589,11 +590,11 @@ resource "aws_lb_target_group" "main" {
   }
 }
 
-# resource "aws_lb_target_group_attachment" "this" {
-#   for_each = { for k, v in local.target_group_attachments : k => v if local.create_lb }
+resource "aws_lb_target_group_attachment" "this" {
+  for_each = { for k, v in var.target_group_attachments : k => v }
 
-#   target_group_arn  = aws_lb_target_group.main[each.value.tg_index].arn
-#   target_id         = each.value.target_id
-#   port              = lookup(each.value, "port", null)
-#   availability_zone = lookup(each.value, "availability_zone", null)
-# }
+  target_group_arn  = each.value.target_group_arn
+  target_id         = each.value.target_id
+  port              = each.value.port
+  availability_zone = try(each.value.availability_zone, null)
+}

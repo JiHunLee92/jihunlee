@@ -14,6 +14,7 @@ locals {
 
 ################################################################################
 # VPC
+# Link : https://github.com/terraform-aws-modules/terraform-aws-vpc
 ################################################################################
 
 resource "aws_vpc" "this" {
@@ -51,6 +52,7 @@ resource "aws_subnet" "public" {
     Name        = format("${var.name}-${var.environment}-sbn-${var.public_subnet_suffix}-%s", substr(element(var.azs, count.index), -2, 2))
     Terraform   = var.terraform
     Environment = var.environment
+    Tier        = var.public_tier
   }
 }
 
@@ -85,6 +87,18 @@ resource "aws_route" "public_internet_gateway" {
   }
 }
 
+resource "aws_route" "public_transit_gateway" {
+  for_each = var.public_transit_gateway_route
+
+  route_table_id         = aws_route_table.public[0].id
+  destination_cidr_block = each.value.destination_cidr_block
+  transit_gateway_id     = var.public_transit_gateway_id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
 ################################################################################
 # Private Subnets
 ################################################################################
@@ -104,6 +118,7 @@ resource "aws_subnet" "private" {
     Name        = format("${var.name}-${var.environment}-sbn-${var.private_subnet_suffix}-%s", substr(element(var.azs, count.index), -2, 2))
     Terraform   = var.terraform
     Environment = var.environment
+    Tier        = var.private_tier
   }
 }
 
@@ -139,6 +154,18 @@ resource "aws_route" "private_nat_gateway" {
   route_table_id         = element(aws_route_table.private[*].id, count.index)
   destination_cidr_block = var.nat_gateway_destination_cidr_block
   nat_gateway_id         = element(aws_nat_gateway.this[*].id, count.index)
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route" "private_transit_gateway" {
+  for_each = var.private_transit_gateway_route
+
+  route_table_id         = aws_route_table.private[0].id
+  destination_cidr_block = each.value.destination_cidr_block
+  transit_gateway_id     = var.private_transit_gateway_id
 
   timeouts {
     create = "5m"

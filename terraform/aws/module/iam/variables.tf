@@ -3,13 +3,11 @@
 ################################################################################
 
 variable "assume_role_policy" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "role_name" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "aws_iam_role_policy_attachment" {}
@@ -23,12 +21,17 @@ variable "terraform" {
 }
 
 variable "environment" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "tags" {
   description = "A mapping of tags to assign to security group"
   type        = map(string)
   default     = {}
+}
+
+variable "aws_iam_instance_profile" {
+  type = map(object({
+    instance_profile_name = string
+  }))
 }

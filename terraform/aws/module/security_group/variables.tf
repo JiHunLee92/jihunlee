@@ -2,10 +2,9 @@
 # Security group
 #################
 
-variable "name" {
+variable "sg_name" {
   description = "Name to be used on all the resources as identifier"
   type        = string
-  default     = ""
 }
 
 variable "vpc_id" {
@@ -21,8 +20,7 @@ variable "terraform" {
 }
 
 variable "environment" {
-  type    = string
-  default = ""
+  type = string
 }
 
 variable "tags" {

@@ -45,6 +45,16 @@ variable "environment" {
   default = ""
 }
 
+variable "public_tier" {
+  type    = string
+  default = "Public"
+}
+
+variable "private_tier" {
+  type    = string
+  default = "Private"
+}
+
 ################################################################################
 # Publiс Subnets
 ################################################################################
@@ -65,6 +75,12 @@ variable "azs" {
   description = "A list of availability zones names or ids in the region"
   type        = list(string)
   default     = []
+}
+
+variable "public_transit_gateway_route" {}
+
+variable "public_transit_gateway_id" {
+  type = string
 }
 
 ################################################################################
@@ -125,4 +141,10 @@ variable "nat_gateway_destination_cidr_block" {
   description = "Used to pass a custom destination route for private NAT Gateway. If not specified, the default 0.0.0.0/0 is used as a destination route"
   type        = string
   default     = "0.0.0.0/0"
+}
+
+variable "private_transit_gateway_route" {}
+
+variable "private_transit_gateway_id" {
+  type = string
 }

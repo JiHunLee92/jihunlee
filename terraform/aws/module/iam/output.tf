@@ -21,3 +21,8 @@ output "iam_role_unique_id" {
   description = "Unique ID of IAM role"
   value       = aws_iam_role.this.unique_id
 }
+
+output "iam_instance_profile_name" {
+  description = "Unique ID of IAM role"
+  value       = try(aws_iam_instance_profile.this["instance_profile_1"].name, null)
+}

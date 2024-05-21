@@ -3,10 +3,11 @@
 ###############################################################################
 
 resource "aws_codebuild_project" "this" {
-  name          = var.name
-  description   = "Build and push Docker images to ECR for ${var.name}"
+  name          = var.codebuild_name
+  description   = "Build and push Docker images to ECR for ${var.codebuild_name}"
   build_timeout = "60"
 
+  # service_role  = data.aws_iam_role.codebuild_role.arn
   service_role = var.codebuild_role_arn
 
   artifacts {
@@ -82,4 +83,3 @@ resource "aws_codebuild_webhook" "this" {
   #   }
   # }
 }
-

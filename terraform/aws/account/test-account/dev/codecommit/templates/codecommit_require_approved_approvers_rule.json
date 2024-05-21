@@ -1,0 +1,9 @@
+{
+    "Version"               : "2018-11-08",
+    "DestinationReferences" : ["*"],
+    "Statements" : [{
+      "Type"                    : "Approvers",
+      "NumberOfApprovalsNeeded" : 1,
+      "ApprovalPoolMembers"     : ["CodeCommitApprovers:*"]
+    }]
+}

@@ -1,5 +1,6 @@
 ################################################################################
 # IAM 
+# Link : https://github.com/terraform-aws-modules/terraform-aws-iam
 ################################################################################
 
 resource "aws_iam_role" "this" {
@@ -48,3 +49,14 @@ resource "aws_iam_role_policy" "this" {
 #     var.tags
 #   )
 # }
+
+################################################################################
+# IAM Instance Profile
+################################################################################
+
+resource "aws_iam_instance_profile" "this" {
+  for_each = var.aws_iam_instance_profile
+
+  name = each.value.instance_profile_name
+  role = aws_iam_role.this.name
+}

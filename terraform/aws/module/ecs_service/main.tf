@@ -1,5 +1,6 @@
 ################################################################################
 # Task Definition
+# Link : https://github.com/terraform-aws-modules/terraform-aws-ecs
 ################################################################################
 
 resource "aws_ecs_task_definition" "this" {
@@ -67,7 +68,7 @@ resource "aws_ecs_task_definition" "this" {
 resource "aws_ecs_service" "this" {
   count = 1
 
-  name                               = var.name
+  name                               = var.service_name
   cluster                            = var.cluster_arn
   task_definition                    = aws_ecs_task_definition.this.arn
   scheduling_strategy                = var.scheduling_strategy
@@ -142,111 +143,104 @@ resource "aws_ecs_service" "this" {
 # Autoscaling
 ################################################################################
 
-# locals {
-#   enable_autoscaling = var.create && var.enable_autoscaling && !local.is_daemon
+resource "aws_appautoscaling_target" "this" {
+  count = 1
 
-#   cluster_name = element(split("/", var.cluster_arn), 1)
-# }
+  # Desired needs to be between or equal to min/max
+  min_capacity = min(var.autoscaling_min_capacity, var.desired_count)
+  max_capacity = max(var.autoscaling_max_capacity, var.desired_count)
 
-# resource "aws_appautoscaling_target" "this" {
-#   count = local.enable_autoscaling ? 1 : 0
+  resource_id        = "service/${var.cluster_name}/${aws_ecs_service.this[0].name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
 
-#   # Desired needs to be between or equal to min/max
-#   min_capacity = min(var.autoscaling_min_capacity, var.desired_count)
-#   max_capacity = max(var.autoscaling_max_capacity, var.desired_count)
+resource "aws_appautoscaling_policy" "this" {
+  for_each = { for k, v in var.autoscaling_policies : k => v }
 
-#   resource_id        = "service/${local.cluster_name}/${try(aws_ecs_service.this[0].name, aws_ecs_service.ignore_task_definition[0].name)}"
-#   scalable_dimension = "ecs:service:DesiredCount"
-#   service_namespace  = "ecs"
-# }
+  name               = try(each.value.name, each.key)
+  policy_type        = try(each.value.policy_type, "TargetTrackingScaling")
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
 
-# resource "aws_appautoscaling_policy" "this" {
-#   for_each = { for k, v in var.autoscaling_policies : k => v if local.enable_autoscaling }
+  dynamic "step_scaling_policy_configuration" {
+    for_each = try([each.value.step_scaling_policy_configuration], [])
 
-#   name               = try(each.value.name, each.key)
-#   policy_type        = try(each.value.policy_type, "TargetTrackingScaling")
-#   resource_id        = aws_appautoscaling_target.this[0].resource_id
-#   scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
-#   service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+    content {
+      adjustment_type          = try(step_scaling_policy_configuration.value.adjustment_type, null)
+      cooldown                 = try(step_scaling_policy_configuration.value.cooldown, null)
+      metric_aggregation_type  = try(step_scaling_policy_configuration.value.metric_aggregation_type, null)
+      min_adjustment_magnitude = try(step_scaling_policy_configuration.value.min_adjustment_magnitude, null)
 
-#   dynamic "step_scaling_policy_configuration" {
-#     for_each = try([each.value.step_scaling_policy_configuration], [])
+      dynamic "step_adjustment" {
+        for_each = try(step_scaling_policy_configuration.value.step_adjustment, [])
 
-#     content {
-#       adjustment_type          = try(step_scaling_policy_configuration.value.adjustment_type, null)
-#       cooldown                 = try(step_scaling_policy_configuration.value.cooldown, null)
-#       metric_aggregation_type  = try(step_scaling_policy_configuration.value.metric_aggregation_type, null)
-#       min_adjustment_magnitude = try(step_scaling_policy_configuration.value.min_adjustment_magnitude, null)
+        content {
+          metric_interval_lower_bound = try(step_adjustment.value.metric_interval_lower_bound, null)
+          metric_interval_upper_bound = try(step_adjustment.value.metric_interval_upper_bound, null)
+          scaling_adjustment          = try(step_adjustment.value.scaling_adjustment, null)
+        }
+      }
+    }
+  }
 
-#       dynamic "step_adjustment" {
-#         for_each = try(step_scaling_policy_configuration.value.step_adjustment, [])
+  dynamic "target_tracking_scaling_policy_configuration" {
+    for_each = try(each.value.policy_type, null) == "TargetTrackingScaling" ? try([each.value.target_tracking_scaling_policy_configuration], []) : []
 
-#         content {
-#           metric_interval_lower_bound = try(step_adjustment.value.metric_interval_lower_bound, null)
-#           metric_interval_upper_bound = try(step_adjustment.value.metric_interval_upper_bound, null)
-#           scaling_adjustment          = try(step_adjustment.value.scaling_adjustment, null)
-#         }
-#       }
-#     }
-#   }
+    content {
+      dynamic "customized_metric_specification" {
+        for_each = try([target_tracking_scaling_policy_configuration.value.customized_metric_specification], [])
 
-#   dynamic "target_tracking_scaling_policy_configuration" {
-#     for_each = try(each.value.policy_type, null) == "TargetTrackingScaling" ? try([each.value.target_tracking_scaling_policy_configuration], []) : []
+        content {
+          dynamic "dimensions" {
+            for_each = try(customized_metric_specification.value.dimensions, [])
 
-#     content {
-#       dynamic "customized_metric_specification" {
-#         for_each = try([target_tracking_scaling_policy_configuration.value.customized_metric_specification], [])
+            content {
+              name  = dimensions.value.name
+              value = dimensions.value.value
+            }
+          }
 
-#         content {
-#           dynamic "dimensions" {
-#             for_each = try(customized_metric_specification.value.dimensions, [])
+          metric_name = customized_metric_specification.value.metric_name
+          namespace   = customized_metric_specification.value.namespace
+          statistic   = customized_metric_specification.value.statistic
+          unit        = try(customized_metric_specification.value.unit, null)
+        }
+      }
 
-#             content {
-#               name  = dimensions.value.name
-#               value = dimensions.value.value
-#             }
-#           }
+      dynamic "predefined_metric_specification" {
+        for_each = try([target_tracking_scaling_policy_configuration.value.predefined_metric_specification], [])
 
-#           metric_name = customized_metric_specification.value.metric_name
-#           namespace   = customized_metric_specification.value.namespace
-#           statistic   = customized_metric_specification.value.statistic
-#           unit        = try(customized_metric_specification.value.unit, null)
-#         }
-#       }
+        content {
+          predefined_metric_type = predefined_metric_specification.value.predefined_metric_type
+          resource_label         = try(predefined_metric_specification.value.resource_label, null)
+        }
+      }
 
-#       disable_scale_in = try(target_tracking_scaling_policy_configuration.value.disable_scale_in, null)
+      disable_scale_in   = try(target_tracking_scaling_policy_configuration.value.disable_scale_in, null)
+      scale_in_cooldown  = try(target_tracking_scaling_policy_configuration.value.scale_in_cooldown, 300)
+      scale_out_cooldown = try(target_tracking_scaling_policy_configuration.value.scale_out_cooldown, 60)
+      target_value       = try(target_tracking_scaling_policy_configuration.value.target_value, 75)
+    }
+  }
+}
 
-#       dynamic "predefined_metric_specification" {
-#         for_each = try([target_tracking_scaling_policy_configuration.value.predefined_metric_specification], [])
+resource "aws_appautoscaling_scheduled_action" "this" {
+  for_each = { for k, v in var.autoscaling_scheduled_actions : k => v }
 
-#         content {
-#           predefined_metric_type = predefined_metric_specification.value.predefined_metric_type
-#           resource_label         = try(predefined_metric_specification.value.resource_label, null)
-#         }
-#       }
+  name               = try(each.value.name, each.key)
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
 
-#       scale_in_cooldown  = try(target_tracking_scaling_policy_configuration.value.scale_in_cooldown, 300)
-#       scale_out_cooldown = try(target_tracking_scaling_policy_configuration.value.scale_out_cooldown, 60)
-#       target_value       = try(target_tracking_scaling_policy_configuration.value.target_value, 75)
-#     }
-#   }
-# }
+  scalable_target_action {
+    min_capacity = each.value.min_capacity
+    max_capacity = each.value.max_capacity
+  }
 
-# resource "aws_appautoscaling_scheduled_action" "this" {
-#   for_each = { for k, v in var.autoscaling_scheduled_actions : k => v if local.enable_autoscaling }
-
-#   name               = try(each.value.name, each.key)
-#   service_namespace  = aws_appautoscaling_target.this[0].service_namespace
-#   resource_id        = aws_appautoscaling_target.this[0].resource_id
-#   scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
-
-#   scalable_target_action {
-#     min_capacity = each.value.min_capacity
-#     max_capacity = each.value.max_capacity
-#   }
-
-#   schedule   = each.value.schedule
-#   start_time = try(each.value.start_time, null)
-#   end_time   = try(each.value.end_time, null)
-#   timezone   = try(each.value.timezone, null)
-# }
+  schedule   = each.value.schedule
+  start_time = try(each.value.start_time, null)
+  end_time   = try(each.value.end_time, null)
+  timezone   = try(each.value.timezone, null)
+}

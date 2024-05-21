@@ -2,7 +2,7 @@
 # Elastic Load Balancer
 ##################################################################
 
-variable "name" {
+variable "lb_name" {
   description = "The resource name and Name tag of the load balancer."
   type        = string
   default     = ""
@@ -140,5 +140,11 @@ variable "vpc_id" {
 variable "target_group_tags" {
   description = "A mapping of tags to assign to target group"
   type        = map(string)
+  default     = {}
+}
+
+variable "target_group_attachments" {
+  description = "Map of target group configurations to create"
+  type        = any
   default     = {}
 }

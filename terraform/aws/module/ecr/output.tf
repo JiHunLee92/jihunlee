@@ -2,6 +2,11 @@
 # Repository 
 ################################################################################
 
+output "repository_name" {
+  description = "Full ARN of the repository"
+  value       = try(aws_ecr_repository.this.name, null)
+}
+
 output "repository_arn" {
   description = "Full ARN of the repository"
   value       = try(aws_ecr_repository.this.arn, null)

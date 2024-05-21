@@ -2,16 +2,14 @@
 # Repository
 ################################################################################
 
-variable "name" {
+variable "codebuild_name" {
   description = "The name of the codebuild project"
   type        = string
-  default     = ""
 }
 
 variable "codebuild_role_arn" {
   description = "The ARN of the IAM role that allows CodeBuild to interact with dependent AWS services"
   type        = string
-  default     = "MUTABLE"
 }
 
 variable "compute_type" {
@@ -76,4 +74,3 @@ variable "tags" {
 ################################################################################
 # CodeBuild Webhook
 ################################################################################
-
