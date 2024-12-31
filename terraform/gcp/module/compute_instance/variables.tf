@@ -70,3 +70,14 @@ variable "tags" {
   type        = list(string)
   default     = []
 }
+
+variable "metadata" {
+  description = "A map of metadata to add to the instance"
+  type        = map(string)
+  default     = {}
+}
+
+variable "env_name" {
+  description = "The environment name"
+  type        = string
+}

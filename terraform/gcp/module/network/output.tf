@@ -48,3 +48,8 @@ output "routes" {
   value       = google_compute_route.this
   description = "The created routes resources"
 }
+
+# output "secondary_ranges" {
+#   description = "The name of the secondary range for GKE pods"
+#   value = google_compute_subnetwork.this[*].secondary_ip_range[*]
+# }

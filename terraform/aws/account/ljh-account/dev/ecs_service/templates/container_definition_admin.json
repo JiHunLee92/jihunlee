@@ -1,0 +1,83 @@
+[
+    {
+    "name": "admin",   
+    "cpu": 256,   
+    "memory": 100,   
+    "image": "${image}",
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 3000
+      }
+    ],
+    "environment": [
+      {
+        "name": "DB_HOST",
+        "value": "10.10.10.10"
+      },
+      {
+        "name": "DB_PORT",
+        "value": "3306"
+      },
+      {
+        "name": "DB_USER",
+        "value": "root"
+      },
+      {
+        "name": "DB_PASSWORD",
+        "value": "qwerasdf1"
+      },
+      {
+        "name": "REDIS_API_URL",
+        "value": "redis://10.10.10.11:6379"
+      },
+      {
+        "name": "REDIS_ADMIN_URL",
+        "value": "redis://10.10.10.12:6379"
+      },
+      {
+        "name": "AWS_REGION",
+        "value": "ap-northeast-2"
+      },
+      {
+        "name": "BEANSTALK_ENV",
+        "value": "test-dev-admin"
+      }
+    ],  
+    "logConfiguration": {
+      "logDriver": "awsfirelens",
+      "options": {
+             "Name": "forward",
+             "Host": "10.10.10.13",
+             "Port": "24224"
+      }
+  },  
+    "secrets": [],
+    "essential": true, 
+    "disableNetworking": false,
+    "interactive": false,
+    "volumesFrom": [],
+    "mountPoints" : [],
+    "entryPoint": [],
+    "command": [],
+    "dependsOn": []
+    },
+    {
+			"essential": true,
+			"image": "111111111.dkr.ecr.us-west-2.amazonaws.com/aws-for-fluent-bit:stable",
+			"name": "log_router",
+			"firelensConfiguration": {
+				"type": "fluentbit"
+			},
+			"logConfiguration": {
+				"logDriver": "awslogs",
+				"options": {
+					"awslogs-group": "firelens-container",
+					"awslogs-region": "ap-northeast-2",
+					"awslogs-create-group": "true",
+					"awslogs-stream-prefix": "firelens"
+				}
+			},
+			"memoryReservation": 50
+		 }
+]

@@ -58,7 +58,7 @@ variable "eb_default_settings" {
   default = {
     EC2KeyName = {
       namespace = "aws:autoscaling:launchconfiguration"
-      value     = "adison-dev-key"
+      value     = "test-dev-key"
     }
     InstanceTypes = {
       namespace = "aws:ec2:instances"
@@ -142,7 +142,7 @@ variable "eb_default_settings" {
     # } 
     # ServiceRole = {
     #   namespace = "aws:elasticbeanstalk:environment"
-    #   value = "arn:aws:iam::750526319916:role/aws-elasticbeanstalk-service-role"
+    #   value = "arn:aws:iam::1111111111:role/aws-elasticbeanstalk-service-role"
     # } 
     # LoadBalancerIsShared = {
     #   namespace = "aws:elasticbeanstalk:environment"

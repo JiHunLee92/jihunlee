@@ -1,7 +1,3 @@
-/******************************************
-	Compute_Instance 
- *****************************************/
- 
 resource "google_compute_address" "this" {
   count = var.reserve_ip ? 1 : 0
 
@@ -30,7 +26,7 @@ resource "google_compute_instance" "this" {
     initialize_params {
       image = var.image
       size  = var.boot_disk_size
-      type  = "pd-standard"
+      type  = "${var.env_name}" == "dev" ? "pd-standard" : "pd-balanced"
     }
   }
 
@@ -46,7 +42,7 @@ resource "google_compute_instance" "this" {
       device_name = attached_disk.value.name
     }
   }
-  
+
   network_interface {
     subnetwork         = var.subnetwork
     subnetwork_project = var.subnetwork_project
@@ -82,11 +78,22 @@ resource "google_compute_instance" "this" {
     # }
   }
 
-  metadata = {
-    enable-oslogin = "TRUE"
-  }
+  # dynamic "metadata" {
+  #   for_each = var.oslogin ? [true] : []
+  #   content {
+  #     enable-oslogin = "TRUE"
+  #   }
+  # }
 
-  tags   = var.tags
+  metadata = var.metadata
+  # {
+  #   enable-oslogin = "TRUE"
+
+  #   enable-oslogin = "FALSE"
+  #   ssh-keys       = "devops:${tls_private_key.devops.public_key_openssh}"
+  # }
+
+  tags = var.tags
   # labels = var.labels
   # deletion_protection = var.deletion_protection
   # resource_policies   = var.resource_policies

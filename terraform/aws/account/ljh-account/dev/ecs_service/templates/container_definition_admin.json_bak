@@ -1,0 +1,65 @@
+[
+    {
+    "name": "admin",   
+    "cpu": 256,   
+    "memory": 100,   
+    "image": "${image}",
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 3000
+      }
+    ],
+    "environment": [
+      {
+        "name": "DB_HOST",
+        "value": "10.10.10.10"
+      },
+      {
+        "name": "DB_PORT",
+        "value": "3306"
+      },
+      {
+        "name": "DB_USER",
+        "value": "root"
+      },
+      {
+        "name": "DB_PASSWORD",
+        "value": "qwerasdf1"
+      },
+      {
+        "name": "REDIS_API_URL",
+        "value": "redis://10.10.10.11:6379"
+      },
+      {
+        "name": "REDIS_ADMIN_URL",
+        "value": "redis://10.10.10.12:6379"
+      },
+      {
+        "name": "AWS_REGION",
+        "value": "ap-northeast-2"
+      },
+      {
+        "name": "BEANSTALK_ENV",
+        "value": "test-dev-admin"
+      }
+    ],  
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+      "awslogs-group": "${awslogs-group}",
+      "awslogs-region": "${awslogs-region}",
+      "awslogs-stream-prefix": "ecs"
+      }
+  },  
+    "secrets": [],
+    "essential": true, 
+    "disableNetworking": false,
+    "interactive": false,
+    "volumesFrom": [],
+    "mountPoints" : [],
+    "entryPoint": [],
+    "command": ["bin/rails","server","-e","sandbox","-p","3000"],
+    "dependsOn": []
+    }
+]

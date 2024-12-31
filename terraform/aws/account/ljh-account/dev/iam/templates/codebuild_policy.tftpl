@@ -1,0 +1,47 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "ecr:ListImages"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    },
+    {
+      "Action": [
+        "ecr:GetAuthorizationToken"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    },
+    {
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:DescribeImages",
+        "ecr:BatchGetImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage",
+        "ecs:Poll",
+        "ecs:StartTask",
+        "ecs:StopTask",
+        "ecs:DiscoverPollEndpoint",
+        "ecs:StartTelemetrySession",
+        "ecs:RegisterContainerInstance",
+        "ecs:DeregisterContainerInstance",
+        "ecs:DescribeContainerInstances",
+        "ecs:Submit*"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "${ecr_arns}"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,3 @@
-/******************************************
-	Firewall 
- *****************************************/
-
 locals {
   ingress_rules = { for rule in var.ingress_rules : rule.name => merge(rule, { direction = "INGRESS" }) }
   egress_rules  = { for rule in var.egress_rules : rule.name => merge(rule, { direction = "EGRESS" }) }
@@ -9,7 +5,8 @@ locals {
 }
 
 resource "google_compute_firewall" "rules_ingress_egress" {
-  for_each                = local.rules_all
+  for_each = local.rules_all
+
   name                    = each.value.name
   description             = each.value.description
   direction               = each.value.direction
