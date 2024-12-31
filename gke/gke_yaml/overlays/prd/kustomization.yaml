@@ -1,7 +1,0 @@
-resources:
-  - ../../base
-
-patches:
-  - admin-deployment.yaml
-  - admin-service.yaml
-

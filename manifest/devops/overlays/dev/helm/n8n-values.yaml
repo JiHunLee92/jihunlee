@@ -1,0 +1,54 @@
+extraEnv:
+  VUE_APP_URL_BASE_API: "https://n8n.test.dev.com/"
+  WEBHOOK_URL: "https://n8n.test.dev.com/"
+  N8N_EMAIL_MODE: "smtp"
+  N8N_SMTP_HOST: "email-smtp.us-east-1.amazonaws.com"
+  N8N_SMTP_PORT: "587"
+  N8N_SMTP_SSL: "false"
+  N8N_SMTP_SENDER: "no-reply@test.com"
+  GENERIC_TIMEZONE: "Asia/Seoul"
+  TZ: "Asia/Seoul"
+
+extraEnvSecrets:
+  N8N_SMTP_USER:
+    name: n8n-smtp-secret
+    key: smtp_user
+  N8N_SMTP_PASS:
+    name: n8n-smtp-secret
+    key: smtp_pass
+  N8N_ENCRYPTION_KEY:
+    name: n8n-encryption-key-secret
+    key: encryption_key    
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "true"
+    kubernetes.io/ingress.global-static-ip-name: "devops-dev-cluster-1-30-5-n8n-static-ip"
+    ingress.gcp.kubernetes.io/pre-shared-cert: "n8n-test-dev-com"
+  hosts:
+    - host: "n8n.test.dev.com" 
+      paths:
+        - "/"
+
+image:
+  repository: n8nio/n8n
+  pullPolicy: IfNotPresent
+  tag: "1.70.3" 
+
+service:
+  type: ClusterIP
+  port: 80
+  annotations: {}
+
+persistence:
+  enabled: true
+  type: dynamic
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  storageClass: "standard" 
+
+deploymentStrategy:
+  type: "Recreate"

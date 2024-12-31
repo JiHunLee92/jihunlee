@@ -1,0 +1,194 @@
+kind: DaemonSet
+
+replicaCount: 1
+
+image:
+  repository: cr.fluentbit.io/fluent/fluent-bit
+  tag: "3.1.9-debug"
+  pullPolicy: IfNotPresent
+
+testFramework:
+  enabled: false
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name:
+
+rbac:
+  create: true
+  nodeAccess: false
+  eventsAccess: false
+
+service:
+  type: ClusterIP
+  port: 2020
+
+resources:
+  limits:
+    cpu: 400m
+    memory: 50Mi
+  requests:
+    cpu: 50m
+    memory: 10Mi
+
+flush: 1
+
+metricsPort: 2020
+
+luaScripts: {}
+
+logLevel: info
+
+gmsFilePattern: datahub-datahub-gms-*_data_datahub-gms-*
+bookstackFilePattern: bookstack-bookstack-*_cx_bookstack-*
+brokerServers: "test-dev-gce-kafka-01:9092, test-dev-gce-kafka-02:9092, test-dev-gce-kafka-03:9092"
+
+## https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file
+config:
+  service: |
+    [SERVICE]
+        Daemon Off
+        Flush {{ .Values.flush }}
+        Log_Level {{ .Values.logLevel }}
+        Parsers_File /fluent-bit/etc/parsers.conf
+        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+        HTTP_Server on
+        HTTP_Listen 0.0.0.0
+        HTTP_Port {{ .Values.metricsPort }}
+        Health_Check Ons
+
+  ## https://docs.fluentbit.io/manual/pipeline/inputs
+  inputs: |
+    [INPUT]
+        Name                tail
+        Path                /var/log/containers/{{ .Values.gmsFilePattern }}.log
+        parser              cri
+        Tag                 kube.*
+        Mem_Buf_Limit       5MB
+        Buffer_Max_Size     1MB
+        Skip_Long_Lines     Off
+        DB                  /var/log/fluent-bit.db
+        Read_from_Head      True           
+
+    [INPUT]
+        Name                tail
+        Path                /var/log/containers/{{ .Values.bookstackFilePattern }}.log
+        parser              cri
+        Tag                 kube.*
+        Mem_Buf_Limit       5MB
+        Buffer_Max_Size     1MB
+        Skip_Long_Lines     Off
+        DB                  /var/log/fluent-bit.db
+        Read_from_Head      True           
+
+  # https://docs.fluentbit.io/manual/pipeline/filters
+  filters: |
+    [FILTER]
+        Name        modify
+        Match       kube.*
+        Remove      logtag
+        Remove      stream  
+        Hard_rename time @timestamp          
+
+    [FILTER]
+        Name        parser
+        Match       kube.var.log.containers.datahub-datahub-gms-*
+        parser      datahub_gms_parser    
+        Key_Name    message        
+
+    [FILTER]
+        Name        grep
+        Match       kube.var.log.containers.bookstack-bookstack-*
+        Exclude     message GoogleHC/1.0
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On    
+
+
+  ## https://docs.fluentbit.io/manual/pipeline/outputs
+  outputs: |
+    [OUTPUT]
+        Name                        kafka
+        Match                       kube.var.log.containers.datahub-datahub-gms-*
+        Format                      json
+        Brokers                     {{ .Values.brokerServers }}
+        Topics                      gke-datahub-gms-logs
+        rdkafka.compression.type    lz4
+        timestamp_key               @timestamp
+        timestamp_format            iso8601_ns
+
+    [OUTPUT]
+        Name                        kafka
+        Match                       kube.var.log.containers.bookstack-bookstack-*
+        Format                      json
+        Brokers                     {{ .Values.brokerServers }}
+        Topics                      gke-bookstack-logs
+        rdkafka.compression.type    lz4
+        timestamp_key               @timestamp
+        timestamp_format            iso8601_ns        
+
+
+  # https://docs.fluentbit.io/manual/pipeline/parsers
+  customParsers: |
+    [PARSER]
+        # http://rubular.com/r/tjUt3Awgg4
+        Name datahub_gms_parser
+        Format regex
+        Regex ^(?<timestamp>[0-9-]+ [0-9:]+,[0-9]{1,3})\s*\[(?<thread>[^\]]+)\]\s+(?<log_level>[A-Z]+)\s+(?<logger>[^-]+)\s*-\s*(?<message>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+  # This allows adding more files with arbitrary filenames to /fluent-bit/etc/conf by providing key/value pairs.
+  # The key becomes the filename, the value becomes the file content.
+  extraFiles: {}
+
+volumeMounts:
+  - name: config
+    mountPath: /fluent-bit/etc/conf
+
+daemonSetVolumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+  - name: etcmachineid
+    hostPath:
+      path: /etc/machine-id
+      type: File
+
+daemonSetVolumeMounts:
+  - name: varlog
+    mountPath: /var/log
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+  - name: etcmachineid
+    mountPath: /etc/machine-id
+    readOnly: true
+
+command:
+  - /fluent-bit/bin/fluent-bit
+
+args:
+  - --workdir=/fluent-bit/etc
+  - --config=/fluent-bit/etc/conf/fluent-bit.conf
+
+# This supports either a structured array or a templatable string
+initContainers: []
+
+hotReload:
+  enabled: false
+  image:
+    repository: ghcr.io/jimmidyson/configmap-reload
+    tag: v0.11.1
+    digest:
+    pullPolicy: IfNotPresent
+  resources: {}

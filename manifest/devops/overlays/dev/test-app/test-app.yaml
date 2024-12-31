@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-admin-1
+  labels:
+    app: test-admin-1
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-admin-1
+  template:
+    metadata:
+      labels:
+        app: test-admin-1
+    spec:
+      containers:
+      - name: test-admin-1
+        image: asia-northeast3-docker.pkg.dev/test-project/test-app-artifact-registry/devops-test-app
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi       
+        env:
+        - name: CONFIGMAP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dev-configmap
+              key: config-env
+        - name: SLACK_APP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: slack-secret
+              key: SLACK_APP_TOKEN         
+        - name: SLACK_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: slack-bot-secret
+              key: SLACK_BOT_TOKEN                        
+        - name: SLACK_SIGNING_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: slack-signing-secret
+              key: SLACK_SIGNING_SECRET   

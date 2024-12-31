@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: datahub
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    server: {{ .Values.spec.destination.server }}
+  project: default
+  sources:
+  - repoURL: {{ .Values.spec.source.repoURL }}
+    path: {{ .Values.helm.datahub.path }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    helm:
+      valueFiles:
+      # - $values/{{ .Values.helm.datahub.values }}
+      - $values/devops/overlays/{{ .Values.environment }}/helm/datahub-values.yaml
+  - repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    ref: values
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+

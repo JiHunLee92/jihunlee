@@ -1,8 +1,0 @@
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  name: partners-managed-cert
-  namespace: dev
-spec:
-  domains:
-    - partners.poc.test.com

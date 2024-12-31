@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress  # Will become datahub-ingress
+  annotations:
+    networking.gke.io/v1beta1.FrontendConfig: "datahub-frontend-config"
+    kubernetes.io/ingress.global-static-ip-name: "devops-dev-cluster-1-30-5-datahub-tmp-static-ip"
+    ingress.gcp.kubernetes.io/pre-shared-cert: "datahub-test-dev-com"
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "true"
+spec:
+  ingressClassName: "gce"
+  rules:
+    - host: "datahub.test.dev.com"
+      http:
+        paths:
+        - pathType: ImplementationSpecific
+          path: "/*"
+          backend:
+            service:
+              name: datahub-service
+              port:
+                number: 80

@@ -1,0 +1,12 @@
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.global-static-ip-name: "devops-dev-cluster-1-30-5-dagster-static-ip"
+    ingress.gcp.kubernetes.io/pre-shared-cert: "dagster-test-dev-com"
+
+  dagsterWebserver:
+    host: "dagster.test.dev.com"
+    path: "/*"
+    pathType: ImplementationSpecific

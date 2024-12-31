@@ -1,0 +1,17 @@
+environment: dev
+namespace: data
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/nbtpartners/devops-kube-manifest.git
+    targetRevision: CLDEV-6928
+helm:
+  kustomize:
+    path: devops/overlays/dev
+  prerequisite:
+    path: helm/datahub/datahub-helm-datahub-0.4.27/charts/prerequisites
+  datahub:
+    path: helm/datahub/datahub-helm-datahub-0.4.27/charts/datahub
+    values: devops/overlays/dev/helm/datahub-values.yaml
+
