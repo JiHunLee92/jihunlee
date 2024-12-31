@@ -13,7 +13,7 @@
     shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/2024/Linux_isms.sh" 
      
   - name: Set File Owner Change
-    shell: "sudo chown -R devops.devops /tmp/Linux_isms.sh"
+    shell: "sudo chown -R ubuntu.ubuntu /tmp/Linux_isms.sh"
  
   - name: Set File Permission
     shell: "sudo chmod 777 /tmp/Linux_isms.sh"
@@ -22,20 +22,12 @@
     shell: "export TERM=xterm"   
 
   - name: Check Sciprt Running
-    expect:
-      command: /tmp/Linux_isms.sh -E server -n || true
-      responses:
-          'Using the Apache Service\? \[Y/N\] : ': 'N'
+    shell: "/tmp/Linux_isms.sh -E server -n || true"
     ignore_errors: yes
-    register: script_result  
-
-  - name: Debug Script Result
-    debug:
-      var: script_result
 
   - name: File Recive to Remote Server
     fetch:
-      src: "/home/devops/SERVER_UNIX_{{ ansible_hostname }}.uraw"      
+      src: "/home/ubuntu/SERVER_UNIX_{{ ansible_hostname }}.uraw"      
       dest: "/log/maintenance/SERVER_UNIX_{{ ansible_hostname }}.uraw"
       flat: yes
 
@@ -43,4 +35,4 @@
     shell: "rm -rf /tmp/Linux_isms.sh"
 
   - name: Delete result File
-    shell: "rm -rf /home/devops/SERVER_UNIX_{{ ansible_hostname }}.uraw"
+    shell: "rm -rf /home/ubuntu/SERVER_UNIX_{{ ansible_hostname }}.uraw"

@@ -19,16 +19,8 @@
     shell: "export TERM=xterm"    
 
   - name: Check Sciprt Running
-    expect:
-      command: /tmp/Linux_isms.sh -E server -n || true
-      responses:
-          'Using the Apache Service\? \[Y/N\] : ': 'N'
+    shell: "/tmp/Linux_isms.sh -E server -n || true"
     ignore_errors: yes
-    register: script_result  
-
-  - name: Debug Script Result
-    debug:
-      var: script_result
 
   - name: Find files to copy
     find: paths="/home/ubuntu/" recurse=no patterns="*.uraw"
@@ -39,7 +31,7 @@
       src : "/home/ubuntu/SERVER_UNIX_{{ ansible_hostname }}.uraw"
       dest : "/log/maintenance/SERVER_UNIX_{{ ansible_hostname }}.uraw"
       flat: yes
-
+ 
   - name: Delete Scripte File
     shell: "rm -rf /tmp/Linux_isms.sh"    
 

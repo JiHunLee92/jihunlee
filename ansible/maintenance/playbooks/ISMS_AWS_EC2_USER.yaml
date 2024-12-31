@@ -10,17 +10,25 @@
   tasks:
 
   - name: Download Script File
-    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/aegisecu/2023/Server_Linux.sh" 
+    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/2024/Linux_isms.sh" 
      
   - name: Set File Permission
-    shell: "sudo chmod 777 /tmp/Server_Linux.sh"
+    shell: "sudo chmod 777 /tmp/Linux_isms.sh"
 
   - name: Set Term Value
     shell: "export TERM=xterm"    
 
   - name: Check Sciprt Running
-    shell: "/tmp/Server_Linux.sh -E server -n || true"
+    expect:
+      command: /tmp/Linux_isms.sh -E server -n || true
+      responses:
+          'Using the Apache Service\? \[Y/N\] : ': 'N'
     ignore_errors: yes
+    register: script_result  
+
+  - name: Debug Script Result
+    debug:
+      var: script_result    
 
   - name: Find files to copy
     find: paths="/home/ec2-user/" recurse=no patterns="*.uraw"
@@ -28,7 +36,12 @@
 
   - name: Copy files
     fetch: 
-      src : "{{ item.path }}"
-      dest : "/log/"
+      src : "/home/ec2-user/SERVER_UNIX_{{ ansible_hostname }}*.uraw"
+      dest : "/log/maintenance/SERVER_UNIX_{{ ansible_hostname }}*.uraw"
       flat: yes
-    with_items: "{{ files_to_copy.files }}"
+
+  - name: Delete Scripte File
+    shell: "rm -rf /tmp/Linux_isms.sh"    
+
+  - name: Delete result File
+    shell: "rm -rf /home/ec2-user/SERVER_UNIX_{{ ansible_hostname }}*.uraw"        

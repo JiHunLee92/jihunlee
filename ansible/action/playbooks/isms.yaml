@@ -8,7 +8,7 @@
   tasks:
   
   - name: Download Script File
-    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/scripts/2023/ubuntu.sh" 
+    shell: "wget -P /tmp/ https://storage.googleapis.com/test-isms/scripts/2024/ubuntu.sh" 
     
   - name: Grant user and file execution permission
     shell: "chown -R devops.devops /tmp/ubuntu.sh"

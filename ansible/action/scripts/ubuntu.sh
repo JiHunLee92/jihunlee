@@ -15,6 +15,8 @@ elif [ "$OS" == "18.04" ]; then
 	OSVERSION="Ubuntu 18.04"
 elif [ "$OS" == "20.04" ]; then
 	OSVERSION="Ubuntu 20.04"
+elif [ "$OS" == "22.04" ]; then
+	OSVERSION="Ubuntu 22.04"
 fi
 
 ## ISMS_SECURITY APPLY ##
@@ -26,23 +28,51 @@ echo "$HOSTNAME ($OSVERSION)"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 
-## FILE BACKUP #
-sudo cp /etc/pam.d/common-password /etc/pam.d/common-password-$DATE
 
 echo "[UNX-102] 패스워드 복잡성 설정"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
-echo "BACKUP FILE - /etc/pam.d/common-password-$DATE"
+echo "BACKUP FILE - /etc/pam.d/common-auth-$DATE"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 echo "Before Value"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
-cat /etc/pam.d/common-password | grep -v "#" | grep -v "^$"
+cat /etc/pam.d/common-auth | grep -v "#" | grep -v "^$"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 
 if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+	## FILE BACKUP #
+	sudo cp /etc/pam.d/common-auth /etc/pam.d/common-auth-$DATE
+        OLD_DATA=$(cat /etc/pam.d/common-auth | grep -x "password.*ocredit=-1")
+        ADD_DATA="password requisite pam_pwquality.so retry=3 minlen=8 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1"
+
+        if [ -z "$OLD_DATA" ]; then
+                echo "After Value"
+                sudo sh -c "sudo echo 'password requisite pam_pwquality.so retry=3 minlen=8 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1' >> /etc/pam.d/common-auth"
+                echo "--------------------------------------------------------------------------------------------------------------------------------"
+                cat /etc/pam.d/common-auth | grep -v "#" | grep -v "^$"
+                echo "--------------------------------------------------------------------------------------------------------------------------------"
+        else
+                echo "After Value"
+                echo "--------------------------------------------------------------------------------------------------------------------------------"
+                cat /etc/pam.d/common-auth | grep -v "#" | grep -v "^$"
+                echo "--------------------------------------------------------------------------------------------------------------------------------"
+        fi
+elif [ "$OS" == "22.04" ]; then
+	## FILE BACKUP #
+	sudo cp /etc/pam.d/common-password /etc/pam.d/common-password-$DATE
         OLD_DATA=$(cat /etc/pam.d/common-password | grep -x "password.*ocredit=-1")
         ADD_DATA="password requisite pam_pwquality.so retry=3 minlen=8 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1"
+
+        # Ubuntu 22.04 pwquality pam 설치
+        if dpkg -s libpam-pwquality &> /dev/null; then
+	    echo "libpam-pwquality is already installed."
+	else
+	    echo "libpam-pwquality is not installed. Installing..."
+	    sudo apt-get update || true
+	    sudo apt-get install -y libpam-pwquality || true
+	    echo "libpam-pwquality has been successfully installed."
+	fi
 
         if [ -z "$OLD_DATA" ]; then
                 echo "After Value"
@@ -56,13 +86,12 @@ if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
                 cat /etc/pam.d/common-password | grep -v "#" | grep -v "^$"
                 echo "--------------------------------------------------------------------------------------------------------------------------------"
         fi
+else
+	echo "Unsupported OS version"
 fi
 
 echo ""
 
-
-## FILE BACKUP #
-sudo cp /etc/pam.d/common-auth /etc/pam.d/common-auth-$DATE
 
 echo "[UNX-103] 계정 잠금 임계값 설정"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
@@ -75,13 +104,18 @@ cat /etc/pam.d/common-auth-$DATE | grep -v "#" | grep -v "^$"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
-	OLD_DATA=$(cat /etc/pam.d/common-auth | grep -x "auth.*unlock_time=600")
+# ubuntu 16에서 미동작 확인되어 삭제처리 20240719
+#if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+	OLD_DATA=$(cat /etc/pam.d/common-auth | grep -x "auth.*pam_faillock.so.*unlock_time=600")
 	ADD_DATA="auth.*unlock_time=600"
+	
+	## FILE BACKUP #
+	sudo cp /etc/pam.d/common-auth /etc/pam.d/common-auth-$DATE
 
 	if [ -z "$OLD_DATA" ]; then
 		echo "After Value"
-		sudo sh -c "sudo echo 'auth    required                        pam_tally2.so  onerr=fail even_deny_root deny=5 unlock_time=600' >> /etc/pam.d/common-auth"
+		sudo sh -c "sudo echo 'auth    required                        pam_faillock.so deny=5 unlock_time=600' >> /etc/pam.d/common-auth"
 		echo "--------------------------------------------------------------------------------------------------------------------------------"
 		cat /etc/pam.d/common-auth | grep -v "#" | grep -v "^$"
 		echo "--------------------------------------------------------------------------------------------------------------------------------"
@@ -91,28 +125,90 @@ if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
 		cat /etc/pam.d/common-auth | grep -v "#" | grep -v "^$"
 		echo "--------------------------------------------------------------------------------------------------------------------------------"
 	fi
+elif [ "$OS" == "22.04" ]; then
+	## FILE BACKUP #
+	sudo cp /etc/pam.d/common-account /etc/pam.d/common-account-$DATE
+	OLD_PAM_ACCOUNT_DATA=$(grep -x "account.*required.*pam_faillock.so" /etc/pam.d/common-account)
+
+	# If the line does not exist, add it to the file
+	if [ -z "$OLD_PAM_ACCOUNT_DATA" ]; then
+	    sudo sh -c "echo 'account    required    pam_faillock.so' >> /etc/pam.d/common-account"
+	    echo "The pam_faillock configuration has been added to /etc/pam.d/common-account."
+	else
+	    echo "The pam_faillock configuration already exists in /etc/pam.d/common-account."
+	fi
+
+	NEW_LINES="auth       required                                      pam_faillock.so preauth silent audit deny=4 unlock_time=600
+auth    [success=1 default=ignore]      pam_unix.so nullok
+auth        [default=die]                                pam_faillock.so authfail audit deny=4 unlock_time=600
+auth        sufficient                                    pam_faillock.so authsucc audit deny=4 unlock_time=600"
+	if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
+	    # Backup the original file
+	    sudo cp /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
+	    sudo sed -i '/auth.*\[success=1 default=ignore\].*pam_unix.so nullok/d' /etc/pam.d/common-auth
+
+	    # Create a temporary file
+	    TMP_FILE=$(mktemp)
+
+	    # Add the new lines to the temporary file
+	    echo "$NEW_LINES" | sudo tee $TMP_FILE > /dev/null
+
+	    # Append the original file to the temporary file
+	    sudo cat /etc/pam.d/common-auth >> $TMP_FILE
+
+	    # Move the temporary file to overwrite the original file
+	    sudo mv $TMP_FILE /etc/pam.d/common-auth
+
+	    echo "The pam_faillock configuration has been added to the top of /etc/pam.d/common-auth."
+	else
+	    echo "The pam_faillock configuration already exists in /etc/pam.d/common-auth."
+	fi
+else
+	echo "Unsupported OS version"
 fi
 
 echo ""
 
 ## FILE BACKUP #
 sudo cp /etc/group /etc/group-$DATE
-
+sudo cp /usr/bin/su /usr/bin/su-$DATE
 echo "[UNX-105] ROOT 계정 SU 제한"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo "BACKUP FILE - /etc/group-$DATE"
+echo "BACKUP FILE - /usr/bin/su-$DATE"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 echo "Before \"wheel\", \"sudo\" , \"google-sudoers\" Value"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 cat /etc/group | grep -e wheel -e sudo -e google-sudoers
+ls -al /usr/bin/su
 echo ""
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
 	echo "After \"wheel\", \"sudo\" , \"google-sudoers\" Value"	
 	echo "-------------------------"
 	cat /etc/group | grep -e wheel -e sudo -e google-sudoers
+        sudo chmod 4750 /usr/bin/su
 	echo ""
+fi
+
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
+	OLD_DATA=$(cat /etc/pam.d/su | grep -x "auth.*use_uid")
+
+	if [ -z "$OLD_DATA" ]; then
+		echo "After Value"
+		sudo sh -c "sudo echo 'auth            required        pam_wheel.so use_uid' >> /etc/pam.d/su"
+		echo "--------------------------------------------------------------------------------------------------------------------------------"
+		cat /etc/pam.d/su | grep -v "#" | grep -v "^$"
+		echo "--------------------------------------------------------------------------------------------------------------------------------"
+	else
+		echo "After Value"
+		echo "--------------------------------------------------------------------------------------------------------------------------------"
+		cat /etc/pam.d/su | grep -v "#" | grep -v "^$"
+		echo "--------------------------------------------------------------------------------------------------------------------------------"
+	fi
+else
+	echo "Unsupported OS version"
 fi
 
 echo ""
@@ -149,6 +245,11 @@ if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
 		cat /etc/pam.d/common-password | grep -v "#" | grep -v "^$"
 		echo "--------------------------------------------------------------------------------------------------------------------------------"
 	fi
+elif [ "$OS" == "22.04" ]; then
+	echo "Already configured in [UNX-102]"
+	cat /etc/pam.d/common-password | grep 'minlen'
+else
+	echo "Unsupported OS version"
 fi
 
 echo ""
@@ -166,7 +267,7 @@ cat /etc/login.defs-$DATE | grep "PASS_MAX_DAYS" | grep -v "#"
 cat /etc/login.defs-$DATE | grep "PASS_MIN_DAYS" | grep -v "#"
 echo ""
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] ||  [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] ||  [ "$OS" == "20.04" ] ||  [ "$OS" == "22.04" ]; then
 
 	CHK_MAX_DAYS="PASS_MAX_DAYS   90"
 
@@ -202,11 +303,12 @@ if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] ||  [ "$OS" == "20.04" ]; then
 		sleep 0
 	fi
 
-echo "After Value"	
-echo "--------------------------------------------------------------------------------------------------------------------------------"
-cat /etc/login.defs | grep "PASS_MAX_DAYS" | grep -v "#"
-cat /etc/login.defs | grep "PASS_MIN_DAYS" | grep -v "#"
-
+	echo "After Value"	
+	echo "--------------------------------------------------------------------------------------------------------------------------------"
+	cat /etc/login.defs | grep "PASS_MAX_DAYS" | grep -v "#"
+	cat /etc/login.defs | grep "PASS_MIN_DAYS" | grep -v "#"
+else
+	echo "Unsupported OS version"
 fi
 
 echo "" 
@@ -252,14 +354,14 @@ echo "[UNX-207] SUID, GUID, Sticky bit 설정파일 점검"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo "Before Value"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
-ls -al /sbin/unix_chkpwd
+ls -al /usr/sbin/unix_chkpwd
 ls -al /usr/bin/newgrp
 ls -al /usr/bin/at
 echo ""
 
 echo "After Value"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
-sudo chmod -s /sbin/unix_chkpwd
+sudo chmod -s /usr/sbin/unix_chkpwd
 sudo chmod -s /usr/bin/at
 sudo chmod -s /usr/bin/newgrp
 ls -al /sbin/unix_chkpwd
@@ -281,7 +383,7 @@ umask
 echo "$TMOUT"
 echo ""
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
 
        NOW_TMOUT=$(echo $TMOUT)
 
@@ -303,7 +405,8 @@ if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
                sudo sh -c "sudo echo 'export umask' >> /etc/profile"
 	       source /etc/profile
        fi
-
+else
+	echo "Unsupported OS version"
 fi
 
 echo "After Value"
@@ -327,36 +430,40 @@ cat /etc/ssh/sshd_config-$DATE | grep -x "#PermitRootLogin.*"
 echo "--------------------------------------------------------------------------------------------------------------------------------"
 echo ""
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
 
 	CHK_ROOT=$(cat /etc/ssh/sshd_config | grep PermitRootLogin | grep -v "without-password")
-	CAL_ROOT_DATA_LINE=`expr $ROOT_DATA_LINE + 1`
-	ROOT_DATA_ADD="PermitRootLogin no"
 
 	if [ "$CHK_ROOT" == "#PermitRootLogin prohibit-password" ]; then
-		sudo sudo sed -i 's/\#PermitRootLogin prohibit-password/\#PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
+		sudo sed -i 's/\#PermitRootLogin prohibit-password/\#PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
 		sudo sed -i'' -r -e "/\#PermitRootLogin prohibit-password/a\PermitRootLogin no" /etc/ssh/sshd_config 
 
 	elif [ "$CHK_ROOT" == "PermitRootLogin prohibit-password" ]; then
-		sudo sudo sed -i 's/PermitRootLogin prohibit-password/\#PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
+		sudo sed -i 's/PermitRootLogin prohibit-password/\#PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
 		sudo sed -i'' -r -e "/\#PermitRootLogin prohibit-password/a\PermitRootLogin no" /etc/ssh/sshd_config 
 
 	elif [ "$CHK_ROOT" == "PermitRootLogin no" ]; then
 		sleep 0
 	fi
+else
+	echo "Unsupported OS version"
 fi
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
  
 	if [ ! -f /etc/motd ] ; then
 		sudo touch /etc/motd
-		sudo echo -e "\n-------------------------------------------------------------------------\nWARNING : Unauthorized access to this system is forbidden and will be\nprosecuted by law. By accessing this system, you agree that your actions\nmay be monitored if unauthorized\n-------------------------------------------------------------------------" >> /etc/motd
-	elif [ -f /etc/motd ] && ( ! grep WARNING /etc/motd ); then
-		sudo echo -e "\n-------------------------------------------------------------------------\nWARNING : Unauthorized access to this system is forbidden and will be\nprosecuted by law. By accessing this system, you agree that your actions\nmay be monitored if unauthorized\n-------------------------------------------------------------------------" >> /etc/motd
+		echo -e "\n-------------------------------------------------------------------------\nWARNING : Unauthorized access to this system is forbidden and will be\nprosecuted by law. By accessing this system, you agree that your actions\nmay be monitored if unauthorized\n-------------------------------------------------------------------------" | sudo tee -a /etc/motd > /dev/null
+	elif [ -f /etc/motd ] && ( ! grep -q "WARNING" /etc/motd ); then
+		echo -e "\n-------------------------------------------------------------------------\nWARNING : Unauthorized access to this system is forbidden and will be\nprosecuted by law. By accessing this system, you agree that your actions\nmay be monitored if unauthorized\n-------------------------------------------------------------------------"  | sudo tee -a /etc/motd > /dev/null
+	else
+		echo "Already configured /etc/motd file"
 	fi
+else
+	echo "Unsupported OS version"
 fi
 
-if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ]; then
+if [ "$OS" == "16.04" ] || [ "$OS" == "18.04" ] || [ "$OS" == "20.04" ] || [ "$OS" == "22.04" ]; then
 	
 	# CHK_BANNER=$(cat /etc/ssh/sshd_config | grep -x "#Banner.*")
 	CHK_BANNER=$(cat /etc/ssh/sshd_config | grep "Banner" | grep -v "#")
@@ -381,10 +488,12 @@ may be monitored if unauthorized
 EOF"
 	       sudo systemctl restart sshd
 
-echo "After Value"
-echo "--------------------------------------------------------------------------------------------------------------------------------"
-cat /etc/ssh/sshd_config | grep -x "Banner.*/etc/motd.tail"
-cat /etc/ssh/sshd_config | grep PermitRootLogin | grep -v "without-password" | grep -v "#"
+	echo "After Value"
+	echo "--------------------------------------------------------------------------------------------------------------------------------"
+	cat /etc/ssh/sshd_config | grep -x "Banner.*/etc/motd.tail"
+	cat /etc/ssh/sshd_config | grep PermitRootLogin | grep -v "without-password" | grep -v "#"
+else
+	echo "Unsupported OS version"
 fi
 
 echo ""

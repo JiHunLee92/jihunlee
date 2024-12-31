@@ -22,16 +22,8 @@
     shell: "export TERM=xterm"   
 
   - name: Check Sciprt Running
-    expect:
-      command: /tmp/Linux_isms.sh -E server -n || true
-      responses:
-          'Using the Apache Service\? \[Y/N\] : ': 'N'
+    shell: "/tmp/Linux_isms.sh -E server -n || true"
     ignore_errors: yes
-    register: script_result  
-
-  - name: Debug Script Result
-    debug:
-      var: script_result
 
   - name: File Recive to Remote Server
     fetch:
