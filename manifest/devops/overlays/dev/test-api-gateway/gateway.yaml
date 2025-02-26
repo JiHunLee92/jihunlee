@@ -1,0 +1,125 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: gateway
+spec:
+  gatewayClassName: gke-l7-gxlb  
+  listeners:
+  - name: api-https
+    protocol: HTTPS
+    port: 443
+    hostname: "api-dev-gke.test.com"
+    tls:
+      mode: Terminate
+      options:
+        networking.gke.io/pre-shared-certs: api-dev-gke-test-com
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: admin-https   
+    protocol: HTTPS
+    port: 443
+    hostname: "admin-dev-gke.test.com"   
+    tls:
+      mode: Terminate
+      options:
+        networking.gke.io/pre-shared-certs: admin-dev-gke-test-com
+    allowedRoutes:
+      namespaces:
+        from: All                      
+  addresses:   
+  - type: NamedAddress
+    value: test-dev-cluster-1-30-5-api-static-ip
+
+---
+
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: httproute
+spec:
+  parentRefs:
+  - name: test-dev-api-gateway  
+  hostnames:
+  - "api-dev-gke.test.com" 
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"  
+    backendRefs:
+    - name: test-dev-api-service
+      port: 80  
+
+---
+
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: healthcheck-policy
+spec:
+  default:
+    checkIntervalSec: 30
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 3000
+        requestPath: "/health_check"
+  targetRef:
+    group: ""
+    kind: Service
+    name: test-dev-api-service
+
+---
+
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: backend-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: test-dev-api-service
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: service  
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports":{"80":{}}}'
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: test-dev-api
+    env: dev
+    app.kubernetes.io/name: test-dev-api
+    app.kubernetes.io/instance: server    
+
+---
+
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-httproute
+  labels:
+    argocd.argoproj.io/instance: api
+    env: dev  
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: admin     
+  to:
+  - group: gateway.networking.k8s.io
+    kind: Gateway

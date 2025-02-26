@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-1
+  namespace: dev
+  labels:
+    app: test-1
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-1
+  template:
+    metadata:
+      labels:
+        app: test-1
+    spec:
+      containers:
+      - name: test-1
+        image: 11111111.dkr.ecr.ap-northeast-2.amazonaws.com/test-dev-ecr:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "300m"
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DEPLOYMENT_ENV
+          value: "byebye"     
+        - name: CONFIGMAP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: test-1
+              key: config-env
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-1
+  namespace: dev
+  labels:
+    app: test-1
+    env: dev
+spec:
+  selector:
+    app: test-1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+      nodePort: 30001
+  type: NodePort

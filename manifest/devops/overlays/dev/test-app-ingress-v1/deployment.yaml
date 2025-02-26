@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+  labels:
+    app: test-dev-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-dev-api
+  template:
+    metadata:
+        labels:
+          app: test-dev-api
+          app.kubernetes.io/name: test-dev-api
+          app.kubernetes.io/instance: server          
+    spec:
+      initContainers:  
+      - name: db-migrate
+        image: asia-northeast3-docker.pkg.dev/test/test-dev-artifact-registry/test-api
+        command: ["sh", "-c", "bundle exec rake db:migrate"]
+        envFrom: 
+        - configMapRef:
+            name: test-dev-api-configmap
+        - secretRef:
+            name: test-dev-api-secret
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi     
+      containers:
+      - name: test-dev-api
+        image: asia-northeast3-docker.pkg.dev/test/test-dev-artifact-registry/test-api
+        command: ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
+        envFrom: 
+        - configMapRef:
+            name: test-dev-api-configmap
+        - secretRef:
+            name: test-dev-api-secret
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi 

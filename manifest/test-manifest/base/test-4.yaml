@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-4
+  namespace: dev
+  labels:
+    app: test-4
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-4
+  template:
+    metadata:
+      labels:
+        app: test-4
+    spec:
+      containers:
+      - name: test-4
+        image: 11111111.dkr.ecr.ap-northeast-2.amazonaws.com/test-dev-ecr:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DEPLOYMENT_ENV
+          value: "byebye4"     
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-4
+  namespace: dev
+  labels:
+    app: test-4
+    env: dev
+spec:
+  selector:
+    app: test-4
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-1
+  namespace: dev
+data:
+  config-env: "ENV from configmap"

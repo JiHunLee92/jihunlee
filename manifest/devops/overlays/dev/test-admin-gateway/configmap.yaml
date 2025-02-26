@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+data:
+  RAILS_ENV: sandbox
+  admin_DB_HOST: db.test-dev.private
+  admin_DB_USER: svc_admin
+  admin_REDIS_HOST: redis.test-dev.private.
+  SERVICE_ROLE: admin

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+data:
+  API_DB_HOST: db.test-dev.private 
+  API_DB_USER: svc_api
+  FEED_REDIS_HOST: redis.test-dev.private
+  SERVICE_ROLE: api

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-1
+  namespace: dev
+  labels:
+    app: teat-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-1
+  template:
+    metadata:
+      labels:
+        app: test-1
+    spec:
+      containers:
+      - name: test-1
+        image: 11111111.dkr.ecr.ap-northeast-2.amazonaws.com/test-dev-ecr:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 8000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-1
+  namespace: dev
+  labels:
+    app: test-1
+spec:
+  selector:
+    app: test-1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: NodePort

@@ -1,0 +1,73 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: httproute
+spec:
+  parentRefs:
+  - name: test-dev-api-gateway
+    namespace: api
+  hostnames:
+  - "admin-dev-gke.test.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: test-dev-admin-service
+      port: 80
+
+---
+
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: healthcheck-policy
+spec:
+  default:
+    checkIntervalSec: 30
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 3000
+        requestPath: "/health_check"
+  targetRef:
+    group: ""
+    kind: Service
+    name: test-dev-admin-service
+
+---
+
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: backend-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: test-dev-admin-service
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: service 
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports":{"80":{}}}'
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: test-dev-admin
+    env: dev
+    app.kubernetes.io/name: test-dev-admin
+    app.kubernetes.io/instance: server

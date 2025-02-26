@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+  labels:
+    app: test-dev-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-dev-admin
+  template:
+    metadata:
+      labels:
+        app: test-dev-admin
+        app.kubernetes.io/name: test-dev-admin
+        app.kubernetes.io/instance: server             
+    spec:
+      initContainers:  
+      - name: db-migrate
+        image: asia-northeast3-docker.pkg.dev/test/test-dev-artifact-registry/test-admin
+        command: ["sh", "-c", "bundle exec rake db:migrate"]
+        envFrom: 
+        - configMapRef:
+            name: test-dev-admin-configmap
+        - secretRef:
+            name: test-dev-admin-secret
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi     
+      containers:
+      - name: test-dev-admin
+        image: asia-northeast3-docker.pkg.dev/test/test-dev-artifact-registry/test-admin
+        command: ["sh", "-c", "bundle exec puma -C config/puma.rb"]  
+        envFrom: 
+        - configMapRef:
+            name: test-dev-admin-configmap
+        - secretRef:
+            name: test-dev-admin-secret
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi 

@@ -1,0 +1,81 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "devops-dev-cluster-1-30-5-bookstack-static-ip"
+    ingress.gcp.kubernetes.io/pre-shared-cert: "cbookstack-test-com"
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "false"
+    networking.gke.io/v1beta1.FrontendConfig: "bookstack-dev-frontend-config"
+    cloud.google.com/load-balancer-type: "External"
+  name: {{ printf "%s-%s" .Release.Name "bookstack" }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+  - host: {{ .Values.appHost }}
+    http:
+      paths:
+        - pathType: ImplementationSpecific
+          path: "/*"
+          backend:
+            service:
+              name: {{ printf "%s-%s" .Release.Name "bookstack" }}
+              port:
+                number: 80
+
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: bookstack-dev-backend-config
+  namespace: {{ .Release.Namespace }}
+spec:
+  healthCheck:
+     checkIntervalSec: 30
+     timeoutSec: 5
+     healthyThreshold: 1
+     unhealthyThreshold: 2
+     type: HTTP
+     requestPath: /status
+     port: 8080
+  sessionAffinity:
+    affinityType: "GENERATED_COOKIE"
+    affinityCookieTtlSec: 7200
+  logging:
+    enable: true
+    sampleRate: 1
+  securityPolicy:
+    name: test-dev-office
+
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: bookstack-dev-frontend-config
+  namespace: {{ .Release.Namespace }}
+  annotations:
+spec:
+  redirectToHttps:
+    enabled: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "bookstack" }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+    cloud.google.com/backend-config: '{"ports": {"80":"bookstack-dev-backend-config"}}'
+  labels:
+    app: {{ printf "%s-%s" .Release.Name "bookstack" }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: {{ printf "%s-%s" .Release.Name "bookstack" }}
+  sessionAffinity: ClientIP
