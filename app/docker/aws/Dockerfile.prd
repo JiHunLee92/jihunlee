@@ -1,0 +1,17 @@
+ARG RUBY_VERSION=3.2.5
+
+# Create the final image with the app
+FROM 11111111.dkr.ecr.ap-northeast-2.amazonaws.com/devops-ljh-base:latest as builder
+
+RUN apt update && \
+    apt install -y vim redis
+
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+RUN mkdir -p ./nbt/cert
+
+COPY . $APP_HOME
+
+# development only
+RUN gem install bundler -v $(tail -1 Gemfile.lock) && \
+    bundle install --jobs 20 --retry 5 --with test development

@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws --version
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - DATE=$(date +%Y%m%d%H%M%S)
+      - echo "-[ $DATE ]-"
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_REPO_NAME_WITH_DATE="$IMAGE_REPO_NAME:$DATE"
+      - docker build --platform=linux/amd64 -t $IMAGE_REPO_NAME_WITH_DATE -t $IMAGE_REPO_NAME:latest -f $DOCKER_FILE .
+      - echo "Docker image built successfully"
+      - docker create --name ${IMAGE_REPO_NAME}_container $IMAGE_REPO_NAME_WITH_DATE
+      - docker ps -a
+      - docker cp ${IMAGE_REPO_NAME}_container:/app/public/assets ./assets/
+      - docker rm ${IMAGE_REPO_NAME}_container
+      - ls -al ./assets
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker tag $IMAGE_REPO_NAME_WITH_DATE $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$DATE
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$DATE
+      - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+      - echo Uploading file to S3...
+      - aws s3 cp ./assets/ s3://$S3_ASSETS/assets/ --recursive

@@ -1,0 +1,85 @@
+steps:
+# 1. secret manager에서 키파일 내려받기
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: [ '-c', "gcloud secrets versions access latest --secret=$_SECRET_NAME_1 --format='get(payload.data)' | tr '_-' '/+' | base64 -d > $_SECRET_FILE_1" ]
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: [ '-c', "gcloud secrets versions access latest --secret=$_SECRET_NAME_2 --format='get(payload.data)' | tr '_-' '/+' | base64 -d > $_SECRET_FILE_2" ]
+
+# 2. Docker 이미지 빌드
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args: ['build', '-t', '$_IMAGE_PATH:$SHORT_SHA', '-f', 'Dockerfile-sandbox', '.']
+
+# 2-1. Docker migration 이미지 빌드 (cloudbuild 변수= _MIGRATION_IMAGE_PATH)
+- name: "gcr.io/cloud-builders/docker"
+  id: Tag Migration
+  args: ['tag', '$_IMAGE_PATH:$SHORT_SHA', '$_MIGRATION_IMAGE_PATH:$SHORT_SHA']
+
+# 3. Google Artifact Registry에 Docker 이미지 푸시
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args: ['push', '$_IMAGE_PATH:$SHORT_SHA']
+
+# 3-1. Google Artifact Registry에 Docker migration 이미지 푸시 (cloudbuild 변수= _MIGRATION_IMAGE_PATH) 
+- name: "gcr.io/cloud-builders/docker"
+  id: Push Migration
+  args: ["push", "$_MIGRATION_IMAGE_PATH:$SHORT_SHA"]  
+
+# 4. CD Trigger를 위한 kustomize repo checkout
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Checkout GitHub repository
+  entrypoint: /bin/sh
+  secretEnv: ['GITHUB_TOKEN']
+  args: 
+  - '-c'
+  - |
+    # 전역 Git 사용자 정보 설정 (기본값으로 설정)
+    git config --global user.name "CloudBuild"
+    git config --global user.email "cloudbuild@example.com"
+
+    # GitHub 저장소 클론
+    git clone https://$$GITHUB_TOKEN@github.com/$_GITHUB_REPO.git
+    cd devops-kube-manifest
+    git checkout $_GIT_BRANCH
+
+    # 이전 배포 커밋 추출
+    commit_id="$(git log -1 --pretty=format:'%H')"
+
+    # 커밋 메시지, 작성자 정보 추출
+    commit_msg="$(git log -1 --format='%s' "$commit_id")"
+    author_name="$(git log -1 --format='%an' "$commit_id")"
+    author_email="$(git log -1 --format='%ae' "$commit_id")"
+
+    # git config에 반영
+    git config user.name "$author_name"
+    git config user.email "$author_email"
+
+    cd $_KUSTOMIZE_PATH/hooks
+    # kustomize migration 이미지 업데이트
+    kustomize edit set image $_MIGRATION_IMAGE_PATH=$_MIGRATION_IMAGE_PATH:$SHORT_SHA
+
+    cd ..
+    # kustomize 이미지 업데이트
+    kustomize edit set image $_IMAGE_PATH=$_IMAGE_PATH:$SHORT_SHA
+
+    # 변경사항 커밋 및 푸시
+
+    git add .
+    git commit -m "$commit_msg"
+    git push origin $_GIT_BRANCH
+
+images:
+  - '$_IMAGE_PATH:$SHORT_SHA'
+  - "$_MIGRATION_IMAGE_PATH:$SHORT_SHA"
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  machineType: "E2_HIGHCPU_8"
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/ljh-project/secrets/github-token/versions/latest
+      env: 'GITHUB_TOKEN'
