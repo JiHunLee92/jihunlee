@@ -10,5 +10,6 @@ module "test_dev_route53" {
 
   domain_prefix = "${var.name}-${var.environment}-${var.test_dev_domain_prefix}"
   record_type   = var.test_dev_api_record_type
+  records       = [data.terraform_remote_state.elasticbeanstalk.outputs.test_api_cname]
 }
 
