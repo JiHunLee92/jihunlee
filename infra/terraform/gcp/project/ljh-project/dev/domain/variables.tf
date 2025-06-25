@@ -3,7 +3,7 @@ variable "project_id" {
   default     = "test-project"
 }
 
-variable "test_dev_managed_zone" {
+variable "test_dns_managed_zone" {
   description = "The managed zone for DNS"
   default     = "test-dev-com"
 }
@@ -19,7 +19,7 @@ variable "argocd_recordsets" {
       name    = "argocd."
       type    = "A"
       ttl     = 300
-      records = []
+      records = ["1.1.1.1"]
       routing_policy = {
         wrr = []
         geo = []

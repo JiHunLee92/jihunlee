@@ -1,6 +1,7 @@
 variable "project_id" {
   description = "The project to deploy into"
   type        = string
+  default     = "nbt-lab"
 }
 
 variable "lb_name" {
@@ -74,3 +75,4 @@ variable "timeout_sec" {
 #   description = "The default service to use for the load balancer"
 #   type        = string
 # }
+

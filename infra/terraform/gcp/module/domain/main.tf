@@ -1,18 +1,3 @@
-locals {
-  # certificate_domains = [
-  #   for record in var.recordsets : "${trim(record.name, ".")}.${trim(var.domain_suffix, ".")}"
-  # ]
-
-  get_global_ip = var.create_global_address ? google_compute_global_address.global_ip[0].address : null
-}
-
-# Global Address (Global IP)
-resource "google_compute_global_address" "global_ip" {
-  count   = var.create_global_address ? 1 : 0
-  project = var.project_id
-  name    = var.global_address_name
-}
-
 # DNS Record Set
 resource "google_dns_record_set" "cloud_static_records" {
   for_each = var.create_dns_record ? { for record in var.recordsets : join("/", [record.name, record.type]) => record } : {}

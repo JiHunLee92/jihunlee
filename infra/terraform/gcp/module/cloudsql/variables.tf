@@ -103,6 +103,26 @@ variable "maintenance_window_update_track" {
   type        = string
   default     = "canary"
 }
+
+variable "backup_configuration_location" {
+  type = string
+  default = null
+}
+
+variable "allocated_ip_range" {
+  type = string
+  default = null
+}
+
+variable "backup_configuration_binary_log_enabled" {
+  type = bool
+  default = null
+}
+
+variable "deletion_protection_enabled" {
+  type = bool
+  default = false
+}
 # variable "insights_config" {
 #   description = "Insights configuration for Cloud SQL instance"
 #   type = object({

@@ -5,7 +5,6 @@ resource "google_sql_database_instance" "cloud_sql_instance" {
   master_instance_name = var.master_instance_name
   deletion_protection  = var.deletion_protection
 
-
   settings {
     tier              = var.machine_type
     edition           = var.edition
@@ -13,10 +12,12 @@ resource "google_sql_database_instance" "cloud_sql_instance" {
     disk_size         = var.disk_size
     disk_type         = var.disk_type
     disk_autoresize   = var.disk_autoresize
+    deletion_protection_enabled = var.deletion_protection_enabled
 
     ip_configuration {
-      ipv4_enabled    = false
-      private_network = var.vpc_id
+      ipv4_enabled       = false
+      private_network    = var.vpc_id
+      allocated_ip_range = var.allocated_ip_range
     }
 
     dynamic "database_flags" {
@@ -29,6 +30,9 @@ resource "google_sql_database_instance" "cloud_sql_instance" {
 
     backup_configuration {
       enabled = true
+
+      location           = var.backup_configuration_location
+      binary_log_enabled = var.backup_configuration_binary_log_enabled
     }
 
     dynamic "maintenance_window" {

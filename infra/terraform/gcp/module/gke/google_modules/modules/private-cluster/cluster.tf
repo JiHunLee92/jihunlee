@@ -30,7 +30,8 @@ resource "google_container_cluster" "primary" {
   location            = local.location
   node_locations      = local.node_locations
   cluster_ipv4_cidr   = var.cluster_ipv4_cidr
-  network             = "projects/${local.network_project_id}/global/networks/${var.network}"
+  # network             = "projects/${local.network_project_id}/global/networks/${var.network}"
+  network = var.network
   deletion_protection = var.deletion_protection
 
   dynamic "network_policy" {
@@ -72,7 +73,12 @@ resource "google_container_cluster" "primary" {
     }
   }
 
-  subnetwork = "projects/${local.network_project_id}/regions/${local.region}/subnetworks/${var.subnetwork}"
+  secret_manager_config {
+    enabled = true
+  }
+
+  # subnetwork = "projects/${local.network_project_id}/regions/${local.region}/subnetworks/${var.subnetwork}"
+  subnetwork = var.subnetwork
 
   default_snat_status {
     disabled = var.disable_default_snat

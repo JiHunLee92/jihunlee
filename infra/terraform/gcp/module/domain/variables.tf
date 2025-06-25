@@ -9,6 +9,7 @@ variable "project_id" {
 
 variable "global_address_name" {
   type = string
+  default     = null
 }
 
 variable "create_dns_record" {

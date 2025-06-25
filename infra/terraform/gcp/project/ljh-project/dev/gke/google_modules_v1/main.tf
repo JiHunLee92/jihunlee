@@ -21,6 +21,12 @@ module "devops_gke" {
   deletion_protection        = var.deletion_protection_f
   region                     = var.region
   zones                      = local.zone_list
+  remove_default_node_pool   = var.remove_default_node_pool_t
+  gateway_api_channel        = var.devops_gateway_api_channel
+  maintenance_start_time     = var.maintenance_start_time
+  maintenance_end_time       = var.maintenance_end_time
+  maintenance_recurrence     = var.maintenance_recurrence
+  maintenance_exclusions     = var.maintenance_exclusions
 
   node_pools = [
     for pool in var.devops_node_pools : merge(pool, {

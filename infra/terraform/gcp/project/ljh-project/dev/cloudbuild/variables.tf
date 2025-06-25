@@ -15,7 +15,7 @@ variable "GOOGLE_CREDENTIALS" {
   sensitive   = true
 }
 
-variable "test_name" {
+variable "test_trigger_name" {
   default = "test-app-trigger"
 }
 
@@ -46,10 +46,10 @@ variable "test_repository_id" {
 
 variable "test_repository_branch" {
   description = "Branch for triggering repository events"
-  default     = "^develop$"
+  default     = null
 }
 
-variable "cashfeed_repository_tag" {
+variable "test_repository_tag" {
   default = "^dev-api-.*"
 }
 

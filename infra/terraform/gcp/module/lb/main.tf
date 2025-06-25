@@ -16,15 +16,17 @@ locals {
 
 resource "google_compute_global_address" "this" {
   project = var.project_id
-  name    = "${var.lb_name}-lb-ip"
+  name = "${var.lb_name}-lb-ip"
 }
 
 resource "google_compute_target_https_proxy" "this" {
-  depends_on = [google_compute_managed_ssl_certificate.this]
-  count      = local.external ? 1 : 0
+  depends_on       = [google_compute_managed_ssl_certificate.this]
+  count = local.external ? 1 : 0
 
-  name    = "${var.lb_name}-lb-proxy"
-  url_map = "https://www.googleapis.com/compute/v1/projects/test-project/global/urlMaps/test-dev-lb"
+  name             = "${var.lb_name}-lb-proxy"
+  url_map          = "https://www.googleapis.com/compute/v1/projects/nbt-lab/global/urlMaps/data-dev-lb"
+  # url_map          = google_compute_url_map.this.id
+  # ssl_certificates = [module.data_dev_certificate_v4.certificate_id, module.data_dev_certificate_v5.certificate_id, module.data_dev_certificate_v6.certificate_id]
 }
 
 resource "google_compute_global_forwarding_rule" "this" {
@@ -42,7 +44,7 @@ resource "google_compute_global_forwarding_rule" "this" {
 resource "google_compute_url_map" "this" {
   name = var.lb_name
   # default_service = var.default_service
-  default_service = "https://www.googleapis.com/compute/v1/projects/test-project/global/backendServices/test-dev-bnd"
+  default_service = "https://www.googleapis.com/compute/v1/projects/nbt-lab/global/backendServices/data-dev-bnd-jenkins"
 }
 
 # resource "google_compute_url_map" "this" {
@@ -73,7 +75,7 @@ resource "google_compute_url_map" "this" {
 resource "google_compute_backend_service" "this" {
   for_each = var.backend_services
 
-  project = var.project_id
+  project       = var.project_id
 
   name          = each.value.bnd_name
   protocol      = each.value.protocol
@@ -131,3 +133,4 @@ resource "google_compute_backend_service" "this" {
 
 # resource "google_compute_region_url_map" "this" {
 # }
+

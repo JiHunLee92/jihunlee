@@ -46,6 +46,7 @@ provider "helm" {
 #####################################################################
 # locals {
 #   newrelic_app_namespace = "newrelic"
+#   newrelic_license_key   = "6b7ede2a10daa4a68e7892681d18a4fe15de3c2a"
 # }
 
 # resource "helm_release" "newrelic_nri_bundle" {

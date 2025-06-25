@@ -77,6 +77,45 @@ variable "region" {
   default     = "asia-northeast3"
 }
 
+variable "remove_default_node_pool_t" {
+  type    = bool
+  default = true
+}
+
+variable "devops_gateway_api_channel" {
+  type    = string
+  default = "CHANNEL_STANDARD"
+}
+
+variable "maintenance_start_time" {
+  type        = string
+  description = "Time window specified for daily or recurring maintenance operations in RFC3339 format"
+  default     = "2025-03-26T18:00:00Z"  # Full RFC3339 format with date and time
+}
+
+variable "maintenance_end_time" {
+  type        = string
+  description = "Time window specified for recurring maintenance operations in RFC3339 format"
+  default     = "2025-03-26T22:00:00Z"  # Full RFC3339 format with date and time
+}
+
+variable "maintenance_recurrence" {
+  type        = string
+  description = "Frequency of the recurring maintenance window in RFC5545 format."
+  default     = "FREQ=DAILY"
+}
+
+variable "maintenance_exclusions" {
+  type = list(object({
+    name            = string
+    start_time      = string
+    end_time        = string
+    exclusion_scope = optional(string)
+  }))
+  description = "List of maintenance exclusions. A cluster can have up to three"
+  default     = []
+}
+
 variable "devops_node_pools" {
   default = [
     {
@@ -95,6 +134,8 @@ variable "devops_node_pools" {
       auto_upgrade       = true
       preemptible        = false
       initial_node_count = 1
+      max_surge_upgrade       = 1
+      max_unavailable_upgrade = 0
     }
   ]
 }
