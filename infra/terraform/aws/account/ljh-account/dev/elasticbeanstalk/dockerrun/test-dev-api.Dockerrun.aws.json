@@ -10,7 +10,7 @@
     {
       "name": "credentials",
       "host": {
-        "sourcePath": "/nbt/cert"
+        "sourcePath": "/test/cert"
       }
     },
     {
